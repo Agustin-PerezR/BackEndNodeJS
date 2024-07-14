@@ -1,5 +1,5 @@
 const connection = require('../config/db');
-
+const bcrypt = require('bcryptjs');
 const getUsuarios = (req, res) => {
   connection.query('SELECT * FROM Usuarios', (err, results) => {
     if (err) {
@@ -21,16 +21,33 @@ const getUsuarioById = (req, res) => {
   });
 };
 
+
+
 const createUsuario = (req, res) => {
   const { nombreUsuario, password } = req.body;
-  connection.query('INSERT INTO Usuarios (nombreUsuario, password) VALUES (?, ?)', [nombreUsuario, password], (err, results) => {
+
+  // Hash the password before saving
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       res.status(500).send(err);
       return;
     }
-    res.json({ id: results.insertId, nombreUsuario, password });
+
+    console.log("Contraseña cifrada:", hashedPassword);  // Verificar el hash generado
+
+    // Guarda el usuario con la contraseña cifrada
+    connection.query('INSERT INTO Usuarios (nombreUsuario, password) VALUES (?, ?)', [nombreUsuario, hashedPassword], (err, results) => {
+      if (err) {
+        res.status(500).send(err);
+        return;
+      }
+      res.json({ id: results.insertId, nombreUsuario });
+    });
   });
 };
+
+
+
 
 const updateUsuario = (req, res) => {
   const { id } = req.params;
